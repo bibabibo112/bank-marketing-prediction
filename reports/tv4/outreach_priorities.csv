@@ -1,4 +1,4 @@
 group,customers,subscriptions,subscription_rate
 all_test,8236,928,0.11267606
-random_forest_top_10_percent,824,396,0.48058252
+random_forest_top_10_percent,824,429,0.52063107
 previous_campaign_success,279,172,0.61648746

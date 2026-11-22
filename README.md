@@ -57,6 +57,8 @@ Dự án Phân tích Dữ liệu Lớn dự đoán khách hàng đăng ký tiề
 
 Chọn kernel Python 3.12 đã cài `requirements.txt`, rồi chạy `notebooks/04_experiments_comparison.ipynb`. Bảng kết quả và mục thảo luận nằm trong `reports/tv4`. Hình TV4 trong `reports/figures` dùng nền trắng, palette colorblind và 300 dpi.
 
+Notebook dùng siêu tham số cây, ngưỡng kinh doanh và giả định chi phí của TV2 tại commit `caface4`. `model_metrics.csv` dùng ngưỡng 0,5. `tv2_threshold_metrics.csv` lưu kịch bản ngưỡng trên split ngẫu nhiên và split thời gian.
+
 Chạy lần lượt các lệnh benchmark từ thư mục gốc. Khuyến nghị dùng JDK 17 hoặc 21 cho PySpark.
 
 ```powershell

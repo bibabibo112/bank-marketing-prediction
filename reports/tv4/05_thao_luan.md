@@ -1,32 +1,39 @@
 # 5. Thảo luận
 
-Các phép so sánh dùng cùng bộ Parquet của nhóm, gồm 32.940 dòng train và 8.236 dòng test. Có 928 khách đăng ký trong tập test (11,27%). PR-AUC trong phần này là Average Precision (AP) theo hàm đánh giá chung. Precision, Recall và F1 được tính ở ngưỡng 0,5.
+Các phép so sánh dùng đúng bộ Parquet của TV2, gồm 32.940 dòng train và 8.236 dòng test. Có 928 khách đăng ký trong tập test (11,27%). Notebook huấn luyện lại hai mô hình cây với seed 42 và siêu tham số công bố tại commit `caface4` của `feat/tv2-tree-models`. PR-AUC là Average Precision (AP) theo hàm đánh giá chung. Bảng so sánh mặc định dùng ngưỡng 0,5.
 
 ## 5.1 Baseline và mô hình cây
 
 Mô hình luôn dự đoán `no` đạt Accuracy 88,73% dù bỏ sót cả 928 khách đăng ký. Recall và F1 của lớp `yes` đều bằng 0, còn AP chỉ bằng tỷ lệ khách đăng ký (0,1127). Vì vậy AP và các chỉ số của lớp `yes` phù hợp hơn khi đánh giá khả năng lập danh sách gọi.
 
-Với bộ dữ liệu bỏ `duration`, Logistic Regression đạt AP 0,4536, Random Forest đạt 0,4261 và Decision Tree đạt 0,1825. Random Forest có F1 cao hơn Logistic Regression ở ngưỡng 0,5 (0,3772 so với 0,3201), phản ánh sự khác nhau giữa xếp hạng xác suất và quyết định ở một ngưỡng. Hai mô hình cây ở đây dùng cấu hình mặc định để đối chứng. Kết luận về mô hình cây tinh chỉnh cần đối chiếu với bảng của TV2 trên cùng split.
+| Mô hình bỏ `duration` | Precision | Recall | F1 | ROC-AUC | AP |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Luôn dự đoán `no` | 0,0000 | 0,0000 | 0,0000 | 0,5000 | 0,1127 |
+| Logistic Regression | 0,6502 | 0,2123 | 0,3201 | 0,8005 | 0,4536 |
+| Decision Tree tinh chỉnh | 0,6687 | 0,2349 | 0,3477 | 0,8030 | 0,4686 |
+| Random Forest tinh chỉnh | 0,6746 | 0,2435 | 0,3579 | 0,8121 | 0,4876 |
 
-Random Forest hơn Decision Tree 24,36 điểm phần trăm AP và đạt ROC-AUC 0,7772 so với 0,6254. Cây đơn mặc định chỉ tạo 6 mức xác suất trên test, nên nhiều khách nhận cùng điểm. Random Forest lấy trung bình dự đoán từ nhiều cây huấn luyện trên các mẫu bootstrap và tập con đặc trưng. Trong lần chạy này, mô hình tạo 676 mức xác suất, cho thứ hạng chi tiết hơn và giảm phụ thuộc vào các điểm chia của một cây.
+Random Forest hơn Decision Tree 1,90 điểm phần trăm AP và hơn Logistic Regression 3,40 điểm. Decision Tree của TV2 giới hạn độ sâu 10 và yêu cầu ít nhất 100 mẫu mỗi lá. Random Forest bình quân dự đoán từ 300 cây huấn luyện trên mẫu bootstrap và thử tập con đặc trưng ở mỗi nút. Trên test, Decision Tree cho 101 mức xác suất và Random Forest cho 8.147 mức, tạo thứ hạng chi tiết hơn. Cả hai dòng tinh chỉnh khớp bảng test của TV2.
 
 Trên train, tương quan giữa `euribor3m`, `nr.employed` và `emp.var.rate` nằm trong khoảng 0,907–0,972. Logistic Regression bọc StandardScaler cho AP trung bình 5 fold là 0,4501 với đủ 64 biến và 0,4490 khi bỏ `euribor3m` và `nr.employed`. Notebook giữ đủ biến theo kết quả CV. Chênh lệch nhỏ cho thấy nhóm có thể cân nhắc bản gọn khi cần diễn giải hệ số hoặc giảm đầu vào.
 
 ## 5.2 Rò rỉ từ thời lượng cuộc gọi
 
-Trên cùng các dòng test với tham số mô hình giữ nguyên, thêm `duration` làm AP tăng từ 0,4536 lên 0,6010 với Logistic Regression, từ 0,1825 lên 0,3165 với Decision Tree và từ 0,4261 lên 0,6536 với Random Forest. Mức tăng của Random Forest là 22,75 điểm phần trăm. Thời lượng cuộc gọi chỉ có sau khi cuộc gọi kết thúc, nên các kết quả có `duration` lượng hóa lợi thế từ thông tin tương lai. Kết quả dùng để chọn khách trước cuộc gọi lấy từ cấu hình bỏ cột này.
+Trên cùng các dòng test với tham số mô hình giữ nguyên, thêm `duration` làm AP tăng từ 0,4536 lên 0,6010 với Logistic Regression, từ 0,4686 lên 0,6342 với Decision Tree và từ 0,4876 lên 0,6657 với Random Forest. Mức tăng của Random Forest là 17,81 điểm phần trăm. Thời lượng cuộc gọi chỉ có sau khi cuộc gọi kết thúc, nên các kết quả có `duration` lượng hóa lợi thế từ thông tin tương lai. Kết quả dùng để chọn khách trước cuộc gọi lấy từ cấu hình bỏ cột này.
 
 ## 5.3 Đánh đổi khi cân bằng lớp
 
-Với Random Forest bỏ `duration`, undersampling có AP trung bình trên train cao nhất (0,4132 so với 0,4117 của cấu hình gốc). Chênh lệch 0,0014 nhỏ so với độ lệch chuẩn giữa các fold (0,0206 và 0,0068). Trên test, undersampling phát hiện 632 khách đăng ký, tăng từ 268, đồng thời tăng dương tính giả từ 225 lên 1.440. Recall đạt 68,10% và Precision còn 30,50%.
+Với Random Forest tinh chỉnh và bỏ `duration`, dữ liệu gốc có AP trung bình 5 fold cao nhất (0,4692), tiếp theo là class weight (0,4685), oversampling (0,4677) và undersampling (0,4577). Chênh lệch giữa ba cấu hình đầu nhỏ so với độ lệch chuẩn giữa các fold. Oversampling đạt AP test 0,4889, sát mức 0,4876 của dữ liệu gốc.
 
-Class weight đạt F1 test cao nhất (0,4518), với Recall 45,69% và 525 dương tính giả. Oversampling đạt F1 0,4345. Số liệu ở ngưỡng 0,5 cho thấy các lựa chọn đánh đổi số khách phát hiện được với khối lượng gọi. Để chọn cấu hình theo lợi nhuận, nhóm cần áp dụng cùng quy tắc chi phí và ngưỡng chọn trên validation của TV2.
+Ở ngưỡng 0,5, oversampling có F1 test cao nhất (0,5017), với Recall 63,79% và Precision 41,34%. Số khách đăng ký được nhận diện tăng từ 226 lên 592, đồng thời dương tính giả tăng từ 109 lên 840. Class weight đạt F1 0,4916 và undersampling đạt 0,4944. Bảng này cho thấy đánh đổi giữa độ bao phủ và số cuộc gọi tại cùng ngưỡng. Kịch bản lợi nhuận của TV2 dùng cấu hình dữ liệu gốc, với ngưỡng riêng đã chọn trên train.
 
 ## 5.4 Đặc trưng và nhóm khách ưu tiên gọi
 
-`age` có mức giảm độ hỗn tạp lớn nhất ở cả Decision Tree (0,1618) và Random Forest (0,1480) sau khi gộp các cột one-hot theo biến gốc. `nr.employed` đứng thứ hai ở Decision Tree, còn `euribor3m` đứng thứ hai ở Random Forest. `job` chiếm khoảng 0,10 ở cả hai mô hình. Số điểm chia và tương quan giữa biến vĩ mô có thể ảnh hưởng thứ hạng này. Để xác định nhóm ưu tiên, cần xem hướng dự đoán và tỷ lệ đăng ký quan sát được.
+`nr.employed` có mức giảm độ hỗn tạp lớn nhất ở Decision Tree (0,6317). Random Forest phân bổ đóng góp nhiều hơn giữa `euribor3m` (0,1710), `nr.employed` (0,1539) và `poutcome` (0,0832 sau khi gộp các cột one-hot). Số điểm chia và tương quan giữa các biến vĩ mô có thể ảnh hưởng thứ hạng. Tỷ lệ đăng ký quan sát được giúp xác định nhóm ưu tiên gọi.
 
-Nếu ngân sách chỉ đủ gọi khoảng 10% khách, có thể ưu tiên nhóm điểm Random Forest cao nhất khi bỏ `duration`. Trên test, nhóm này có 396 lượt đăng ký trong 824 khách (48,06%), so với 11,27% trên toàn tập. Trong 279 khách từng có chiến dịch thành công (`poutcome_success = 1`), 172 người đăng ký (61,65%). Lịch sử phản hồi tích cực là tín hiệu đã có trước cuộc gọi. Hai nhóm có thể trùng khách, nên ngân sách và ngưỡng cuối cùng cần được chốt cùng TV2 theo số lượt gọi và chi phí.
+Nếu ngân sách chỉ đủ gọi khoảng 10% khách, có thể ưu tiên nhóm điểm Random Forest cao nhất khi bỏ `duration`. Trên test, nhóm này có 429 lượt đăng ký trong 824 khách (52,06%), so với 11,27% trên toàn tập. Trong 279 khách từng có chiến dịch thành công (`poutcome_success = 1`), 172 người đăng ký (61,65%). Lịch sử phản hồi tích cực là tín hiệu đã có trước cuộc gọi. Hai nhóm có thể trùng khách.
+
+Với giả định chi phí 5 mỗi cuộc gọi và doanh thu 50 mỗi lượt đăng ký, TV2 chọn ngưỡng 0,10 trên dự đoán ngoài fold của train. Áp dụng ngưỡng này trên test cho 1.766 lượt gọi, 623 lượt đăng ký, Recall 67,13% và lợi nhuận mô phỏng 22.320 đơn vị. Ở ngưỡng 0,5, mô hình gọi 335 khách, nhận diện 226 lượt đăng ký và đạt 9.625 đơn vị. Kịch bản gọi toàn bộ 8.236 khách đạt 5.220 đơn vị theo cùng giả định.
 
 ## 5.5 Hiệu năng Spark và scikit-learn
 
@@ -47,6 +54,8 @@ Khi dữ liệu vừa RAM và công việc chủ yếu là fit trên một máy,
 
 ## 5.6 Hạn chế
 
-Tập dữ liệu sạch có 41.176 dòng và lớp đăng ký chỉ chiếm 11,27% trên test. Chia ngẫu nhiên giúp giữ tỷ lệ lớp, đồng thời có thể đưa các quan sát thuộc cùng giai đoạn vào cả train và test. Khi đánh giá chiến dịch tương lai, nên huấn luyện trên `train_time.parquet` và kiểm tra trên `test_time.parquet` để đo ảnh hưởng của biến động theo thời gian.
+Tập dữ liệu sạch có 41.176 dòng. Chia ngẫu nhiên giúp giữ tỷ lệ lớp, đồng thời có thể đưa các quan sát thuộc cùng giai đoạn vào cả train và test. Khi huấn luyện lại Random Forest trên `train_time.parquet` và đánh giá trên `test_time.parquet`, ROC-AUC giảm từ 0,8121 xuống 0,7481. AP tăng từ 0,4876 lên 0,5459 và cần được đọc cùng tỷ lệ đăng ký nền tăng từ 11,27% lên 30,83%.
+
+Ở ngưỡng 0,10 trên test theo thời gian, 5.037 lượt gọi nhận diện 2.181 khách đăng ký và đạt lợi nhuận mô phỏng 83.865 đơn vị. Gọi toàn bộ đạt 85.770 đơn vị trong giai đoạn này. Ngưỡng 0,13 chọn từ `train_time` cho kết quả 76.675 đơn vị trên test thời gian. Khác biệt giữa hai split cho thấy cần kiểm tra lại ngưỡng trên dữ liệu theo thời gian khi đánh giá chiến dịch mới.
 
 Benchmark nhân bản các dòng hiện có để tăng tải, nên giữ nguyên phân bố và độ đa dạng của tập gốc. Hai thư viện cũng tìm điểm chia theo cách riêng, với Spark phân bin các giá trị liên tục. Bảng hiệu năng mô tả đúng cấu hình một máy đã đo.
