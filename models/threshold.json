@@ -1,0 +1,5 @@
+{
+  "threshold": 0.1,
+  "cost_per_call": 5,
+  "revenue_per_signup": 50
+}
