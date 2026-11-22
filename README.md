@@ -13,6 +13,8 @@ Dự án Phân tích Dữ liệu Lớn dự đoán khách hàng đăng ký tiề
 ├── src/
 │   └── metrics.py            # Hàm evaluate() dùng chung cho cả nhóm
 └── requirements.txt          # Danh sách thư viện chuẩn
+```
+
 ---
 
 ## 5. Phân công nhiệm vụ các thành viên tiếp theo
@@ -50,3 +52,17 @@ Dự án Phân tích Dữ liệu Lớn dự đoán khách hàng đăng ký tiề
 - **Thống nhất đánh giá:** Mọi bảng so sánh mô hình đều phải chạy trên cùng bộ split (`data/processed/`), cùng `RANDOM_STATE = 42` và cùng gọi hàm `evaluate()` trong `src/metrics.py`.
 - **Đồng bộ số liệu:** Tổ chức họp ngắn ngay sau khi TV2 và TV4 có kết quả chạy đầu tiên để chốt bảng số liệu chung trước khi viết báo cáo.
 - **Hoàn thiện cuối kỳ:** Ghép Mục 6, Mục 7, xuất báo cáo PDF và làm slide thuyết trình.
+
+## Chạy lại thí nghiệm TV4
+
+Chọn kernel Python 3.12 đã cài `requirements.txt`, rồi chạy `notebooks/04_experiments_comparison.ipynb`. Bảng kết quả và mục thảo luận nằm trong `reports/tv4`. Hình TV4 trong `reports/figures` dùng nền trắng, palette colorblind và 300 dpi.
+
+Chạy lần lượt các lệnh benchmark từ thư mục gốc. Khuyến nghị dùng JDK 17 hoặc 21 cho PySpark.
+
+```powershell
+python -m pip install psutil "pyspark>=4.1,<4.2"
+python benchmark_tv4.py scikit-learn
+python benchmark_tv4.py Spark
+```
+
+Chạy lại ô Benchmark của notebook để cập nhật bảng và hình từ `reports/tv4/benchmark_runs.csv`.
